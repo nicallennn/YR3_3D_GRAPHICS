@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+
+<html>
+
+    <head>
+        <title>Coursework template</title>
+        <link rel="shortcut icon" href="../favicon.ico">
+        <script type="text/javascript" src="../libs/three.js"></script>
+        <script type="text/javascript" src="../libs/jquery.js"></script>
+        <script type="text/javascript" src="../libs/stats.js"></script>
+        <script type="text/javascript" src="../libs/keypress.js"></script>
+        <script type="text/javascript" src="../libs/dat.gui.js"></script>
+        <style>
+            body{
+                /* set margin to 0 and overflow to hidden, to go fullscreen */
+                margin: 0;
+                overflow: hidden;
+            }
+        </style>
+    </head>
+    <body>
+
+        <div id="Stats-output">
+        </div>
+        <!-- Div which will hold the Output -->
+        <div id="WebGL-output">
+        </div>
+
+        <!-- Javascript code that runs our Three.js examples -->
+        <script type="text/javascript">
+
+            // once everything is loaded, we run our Three.js stuff.
+            $(function() {
+
+                //global variables
+                var firstPerson = false;    //determines if the camera is in first person view or not
+                var frontCamera = true;     //determines if the camera is looking forawrd or backwards
+                var speed = 0;              //determines the angle of ufo rotation
+                var ufoRotationSpeed = 0.03;//determines the speed of the ufo rotation
+                var hitBoundary = false;    //determines if the robot has hit a boundary
+                var robotsMet = false;      //determines if the robots have met or not
+                var robotSpeed = 1;         //determines the speed the robot moves at
+                
+                //add stats, initialise using initStats function
+                var stats = initStats();
+
+                // create a scene, that will hold all our elements such as objects, cameras and lights.
+                var scene = new THREE.Scene();
+                
+                // create a camera, which defines where we're looking at.
+                var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+                
+
+                // create a render 
+                var renderer = new THREE.WebGLRenderer();
+
+                //set the renderer clear color
+                renderer.setClearColor(0x111111, 1.0);
+                
+                //set the renderer size
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                
+                //tell the renderer to allow shadows
+                renderer.shadowMap.enabled = true;
+
+                // create the ground plane
+                var plane = createMesh(new THREE.PlaneGeometry(100, 120), "grasslight-big.jpg");
+                //set plane to receive shadow
+                plane.receiveShadow = true;
+
+                // rotate and position the plane
+                plane.rotation.x = -0.5 * Math.PI;
+                plane.position.x = 0;
+                plane.position.y = 0;
+                
+                // add the plane to the scene
+                scene.add(plane);
+                
+                
+                /****************************** ******************************/
+                
+                /***** ROBOT GROUPS *****/
+                // group for robot
+                var robotGroup = new THREE.Object3D();
+                robotGroup.castShadow = true;
+                scene.add(robotGroup);
+                
+                robotGroup.position.set(0,0,-50);
+                
+                
+                //group for robot head
+                var robotHeadGroup = new THREE.Object3D();
+                robotGroup.add(robotHeadGroup);
+                robotHeadGroup.position.y = 6.5;
+                
+                //group for robot upperbody
+                var robotUpperBodyGroup = new THREE.Object3D();
+                robotGroup.add(robotUpperBodyGroup);
+                robotUpperBodyGroup.position.y = 4.5;
+                
+                //group for robot 
+                var robotArmsGroup = new THREE.Object3D();
+                robotUpperBodyGroup.add(robotArmsGroup);
+                             
+                //group for robot legs
+                var robotLegsGroup = new THREE.Object3D();
+                robotLegsGroup.position.y = 1.5;
+                robotGroup.add(robotLegsGroup);
+
+                /*** ***/
+                
+                /*** SECONDARY ROBOT ***/
+                
+                var robotGroup2 = new THREE.Object3D();
+                robotGroup2.castShadow = true;
+                scene.add(robotGroup2);
+                robotGroup2.rotation.y = 1 * Math.PI;
+                robotGroup2.position.set(0,0,50);
+                
+                
+                //group for robot head
+                var robotHeadGroup2 = new THREE.Object3D();
+                robotGroup2.add(robotHeadGroup2);
+                robotHeadGroup2.position.y = 6.5;
+                
+                //group for robot upperbody
+                var robotUpperBodyGroup2 = new THREE.Object3D();
+                robotGroup2.add(robotUpperBodyGroup2);
+                robotUpperBodyGroup2.position.y = 4.5;
+                
+                //group for robot 
+                var robotArmsGroup2 = new THREE.Object3D();
+                robotUpperBodyGroup2.add(robotArmsGroup2);
+                             
+                //group for robot legs
+                var robotLegsGroup2 = new THREE.Object3D();
+                robotLegsGroup2.position.y = 1.5;
+                robotGroup2.add(robotLegsGroup2);
+                
+                /*** ***/
+                
+                /*** ROAD AND PATH GROUP ***/
+                var roadAndPathGroup = new THREE.Object3D();
+                scene.add(roadAndPathGroup);
+                
+                /************* *****************/
+                
+                /*** UFO GROUPs ***/
+                var ufoOrbit = 30; 
+                var ufoInnerOrbitRadius = 15; 
+                var ufoHeight = 15; 
+                
+                var ufoOrbit2 = 30; 
+                var ufoInnerOrbitRadius2 = 15; 
+                var ufoHeight2 = 20; 
+                
+                var ufoOrbit3 = 30; 
+                var ufoInnerOrbitRadius3 = 15; 
+                var ufoHeight3 = 25; 
+
+                /** ufo 1 **/
+                //ufo orbit group
+                var ufoOrbitGroup = new THREE.Object3D();
+                ufoOrbitGroup.position.z = 0;
+                ufoOrbitGroup.position.x = -30;
+                ufoOrbitGroup.position.y = ufoHeight;
+                scene.add(ufoOrbitGroup);
+                
+                //ufo inner orbit group
+                var ufoInnerOrbitGroup = new THREE.Object3D();
+                ufoInnerOrbitGroup.position.x = ufoOrbit;
+        
+                //add to ufo orbit group
+                ufoOrbitGroup.add(ufoInnerOrbitGroup);
+                
+                //ufoGroup
+                var ufoGroup = new THREE.Object3D();
+                ufoGroup.position.x = ufoInnerOrbitRadius;
+                ufoInnerOrbitGroup.add(ufoGroup);
+                
+                //ufo body group
+                var ufoBodyGroup = new THREE.Object3D();
+                ufoGroup.add(ufoBodyGroup);
+                
+                //ufo top group
+                var ufoTopGroup = new THREE.Object3D();
+                ufoTopGroup.position.y = 0.75;
+                ufoGroup.add(ufoTopGroup);
+                
+                /** ufo 2**/
+                
+                //ufo orbit group
+                var ufoOrbitGroup2 = new THREE.Object3D();
+                ufoOrbitGroup2.position.z = -20;
+                ufoOrbitGroup2.position.x = 40;
+                ufoOrbitGroup2.position.y = ufoHeight2;
+                scene.add(ufoOrbitGroup2);
+                
+                //ufo inner orbit group
+                var ufoInnerOrbitGroup2 = new THREE.Object3D();
+                ufoInnerOrbitGroup2.position.x = ufoOrbit2;
+        
+                //add to ufo orbit group
+                ufoOrbitGroup2.add(ufoInnerOrbitGroup2);
+                
+                //ufoGroup
+                var ufoGroup2 = new THREE.Object3D();
+                ufoGroup2.position.x = ufoInnerOrbitRadius2;
+                ufoInnerOrbitGroup2.add(ufoGroup2);
+                
+                //ufo body group
+                var ufoBodyGroup2 = new THREE.Object3D();
+                ufoGroup2.add(ufoBodyGroup2);
+                
+                //ufo top group
+                var ufoTopGroup2 = new THREE.Object3D();
+                ufoTopGroup2.position.y = 0.75;
+                ufoGroup2.add(ufoTopGroup2);
+                
+                /** ufo 3**/
+                
+                //ufo orbit group
+                var ufoOrbitGroup3 = new THREE.Object3D();
+                ufoOrbitGroup3.position.z = -20;
+                ufoOrbitGroup3.position.x = -15;
+                ufoOrbitGroup3.position.y = ufoHeight3;
+                scene.add(ufoOrbitGroup3);
+                
+                //ufo inner orbit group
+                var ufoInnerOrbitGroup3 = new THREE.Object3D();
+                ufoInnerOrbitGroup3.position.x = ufoOrbit3;
+        
+                //add to ufo orbit group
+                ufoOrbitGroup3.add(ufoInnerOrbitGroup3);
+                
+                //ufoGroup
+                var ufoGroup3 = new THREE.Object3D();
+                ufoGroup3.position.x = ufoInnerOrbitRadius3;
+                ufoInnerOrbitGroup3.add(ufoGroup3);
+                
+                //ufo body group
+                var ufoBodyGroup3 = new THREE.Object3D();
+                ufoGroup3.add(ufoBodyGroup3);
+                
+                //ufo top group
+                var ufoTopGroup3 = new THREE.Object3D();
+                ufoTopGroup3.position.y = 0.75;
+                ufoGroup3.add(ufoTopGroup3);
+                
+                
+                /*** HOUSES ***/
+                //house group
+                var houseGroup = new THREE.Object3D;
+                scene.add(houseGroup);
+                
+
+                /****************************** ******************************/
+                
+                //call function to make the robots
+                makeRobot();              
+                makeSecondRobot();
+                
+                //call function to make the road and houses
+                makeRoadAndHouses();
+                
+                //call function to make the ufos
+                makeUfo();
+            
+
+                
+                
+                
+                /****************************** ******************************/
+                
+                /* CAMERA AND LIGHTING */
+                // position and point the camera to the center of the scene
+                camera.position.x = 0;
+                camera.position.y = 40;
+                camera.position.z = -120;
+                camera.lookAt(scene.position);
+                
+                
+
+                // add some ambient to the scene
+                var ambientLight = new THREE.AmbientLight(0x555555);
+                scene.add(ambientLight);
+
+                //add some directional light to the scene
+                var lightingColor = '#2c71af';
+                var light = new THREE.DirectionalLight(lightingColor);
+                light.position.set(0, 15, 30);
+                light.castShadow = true;
+                light.shadowCameraNear = 2;
+                light.shadowCameraFar = 200;
+                light.shadowCameraLeft = -50;
+                light.shadowCameraRight = 50;
+                light.shadowCameraTop = 50;
+                light.shadowCameraBottom = -50;
+                light.shadowMapHeight = 1024;
+                light.shadowMapWidth = 1024;
+                light.target = plane;
+                light.distance = 20;
+                light.intensity = 4;
+                scene.add(light);
+
+
+
+                // add the output of the renderer to the html element
+                $("#WebGL-output").append(renderer.domElement);
+                
+                
+                
+                //create the controls for the 3D scene
+                var controls = new function() {
+                    
+                    //control properties
+                    //switch camera - allows the camera to be switched between front and back views
+                    this.switchCamera = function () {
+                        if (frontCamera) {
+                            viewBackCamera();
+                            this.camera = "Back Camera";
+                        } else {
+                            viewFrontCamera();
+                            this.camera = "Front Camera";
+                        }
+                    };
+                    
+                    
+                    this.firstPerson = false;                       //set initial firstPerson view to false
+                    this.changeUfoRotationSpeed = 0.03;             //set initial ufo rotation speed
+                    this.changeRobotSpeed = robotSpeed;             //set initial robot speed
+                    this.changeLightingColor = lightingColor;       //set initial lighting color
+                    this.changeLightIntensity = light.intensity;    //set initial light intensity
+                    
+                };
+
+                //create gui using data.gui library
+                var gui = new dat.GUI();
+                
+                //add control to switch to first person camera mode
+                gui.add(controls, 'firstPerson', false).onChange(function (e) {
+                  
+                  //camera change, used for constructing robot
+                  if(e){      
+                      firstPerson = true;
+                  }  
+                  else{
+                      firstPerson = false;
+                      viewBackCamera();
+                  }
+                    
+                });
+                
+                //add control to switch between cameras
+                gui.add(controls, 'switchCamera');
+                
+                
+                //add control to change ufo rotation speed
+                gui.add(controls, 'changeUfoRotationSpeed', 0.01, 0.1).onChange(function (){
+                    ufoRotationSpeed = controls.changeUfoRotationSpeed;
+                });
+                
+                //add control to change robot speed
+                gui.add(controls, 'changeRobotSpeed', 1, 5).onChange(function() {
+                    robotSpeed = controls.changeRobotSpeed;
+                });
+                
+                //add control to change light color
+                gui.addColor(controls, 'changeLightingColor').onChange(function (e) {
+                    light.color = new THREE.Color(e);
+                });
+                
+                //add control to change light intensity
+                gui.add(controls, 'changeLightIntensity', 0, 5).onChange(function (e) {
+                    light.intensity = e;
+                });
+                
+                
+                //function to switch to camera behind main robot
+                function viewBackCamera() {
+                    //get the aspect ratio of the users display and assign to aspect variable
+                    var aspect = window.innerWidth / window.innerHeight;
+                    //generate the camera
+                    camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
+                    //set the position of the camera
+                    camera.position.x = 0;
+                    camera.position.y = 40;
+                    camera.position.z = -120;
+                    camera.lookAt(scene.position);
+                    //set the bool to determine which camera is in use
+                    frontCamera = false;
+                }
+                
+                //function to switch to camera infront of main robot
+                function viewFrontCamera() {
+                    //get the aspect ratio of the users display and assign to aspect variable
+                    var aspect = window.innerWidth / window.innerHeight;
+                    //generate the camera
+                    camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
+                    //set the position of the camera
+                    camera.position.x = 0;
+                    camera.position.y = 40;
+                    camera.position.z = 100;
+                    camera.lookAt(robotGroup.position);
+                    //set the bool to determine which camera is in use
+                    frontCamera = true;
+                }
+                
+
+                
+                //variables to determine rotation speed and robot state
+                
+                
+                // call the render function
+                render();
+                
+                function render() {
+                    stats.update();
+ 
+                    //call functions
+                    rotateUfos();                   //rotates the ufos/ufo orbits
+                    checkRobotBoundary();           //checks if the robot has walked out of boundary
+                    checkIfRobotsHaveMet();         //check if robots have met
+                    
+                    //check if first person view is enabled
+                    if(firstPerson){
+                        firstPersonView();          //set to first person view mode
+                    }
+                    
+                    // render using requestAnimationFrame                    
+                    requestAnimationFrame(render);
+                    renderer.render(scene, camera);
+                }
+                
+                /*** ***/
+                
+                //makeRobotFunction - generates main robot
+                function makeRobot() {
+                    /* CONSTRUCT ROBOT */
+                
+                    /***** UPPER BODY *****/
+                    //robot body
+                    var cubeGeometry = new THREE.CubeGeometry(1,1,1);
+                    var robotMaterial = new THREE.MeshLambertMaterial({color: 0xffaa33});
+
+
+                    var connectorMaterial = new THREE.MeshLambertMaterial({color: 0x555555});
+
+                    //chest mesh
+                    var chest = new THREE.Mesh(cubeGeometry, robotMaterial);
+                    chest.scale.set(2.5,3,1.5);
+                    chest.castShadow = true;
+
+                    //add to upper body group
+                    robotUpperBodyGroup.add(chest);
+
+                    /********************** ************************/
+
+                    /**** ARMS ****/
+                    //arms
+                    //loop to generate and add 2 arms to the scene
+                    for(var armCounter = 0; armCounter < 2; armCounter++){
+                        var robotArm = new THREE.Object3D();
+
+                        //arm connector
+                        var connectorGeometry = new THREE.CylinderGeometry(0.35,0.35,0.3,20);
+
+                            //new mesh for arm connector
+                            var armConnector = new THREE.Mesh(connectorGeometry, connectorMaterial);
+
+                            //position
+                            armConnector.rotation.z = 0.5 * Math.PI;
+                            armConnector.position.y = 0.75; 
+                            armConnector.position.x = 1.3;
+
+                            //add the arm connector
+                            robotArm.add(armConnector);
+
+
+
+                        //shoulder joint  
+                        //new geometry for shoulder joint, generate mesh
+                        var jointGeometry = new THREE.SphereGeometry(0.4);
+                        var shoulder = new THREE.Mesh(jointGeometry, connectorMaterial);
+
+                        //position shoulder joint
+                        shoulder.position.x = 1.6;
+                        shoulder.position.y = 0.75;
+
+                        //add to robot arm
+                        robotArm.add(shoulder);
+
+                        //arm 
+                        var arm = new THREE.Mesh(cubeGeometry, robotMaterial);
+                        //scale the arm
+                        arm.scale.set(0.3,1.5,0.3);
+                        arm.position.set(1.6, 0, 0);
+
+                        arm.castShadow = true;
+
+                        robotArm.add(arm);
+
+
+                        //hand joint
+                        //add new sphere geometry and generate the mesh
+                        var handJointGeometry = new THREE.SphereGeometry(0.3);
+                        var handJoint = new THREE.Mesh(handJointGeometry, connectorMaterial);
+                        //set the position
+                        handJoint.position.x = 1.6;
+                        handJoint.position.y = -0.75;
+
+                        handJoint.castShadow = true;
+                        //add the handjoint
+                        robotArm.add(handJoint);
+
+                        //fingers
+                        for(var i = 0; i<2; i++){
+                            //finger mesh
+                            var finger = new THREE.Mesh(cubeGeometry, robotMaterial);
+                            //finger y position
+                            finger.position.y = -1.1;
+                            //scale finger
+                            finger.scale.set(0.1, 0.3, 0.1);
+
+                            //check which finger no. and set x position 
+                            if(i === 0 ){
+                                finger.position.x = 1.5;
+                            }
+                            else{
+                                finger.position.x = 1.7;
+
+                            }
+
+                            finger.castShadow = true;
+                            //add finger
+                            robotArm.add(finger);    
+
+                        }
+
+                        if(armCounter === 0){
+                            //add to arms group
+                            robotArmsGroup.add(robotArm);
+                        }
+                        else{
+                            //rotate the second arm 180 degrees
+                            robotArm.rotation.y = 1 * Math.PI;
+                            //add to arms group
+                            robotArmsGroup.add(robotArm);
+                        }
+
+
+
+                    } //end add arms loop
+
+
+                    /***** HEAD *****/
+                    //robot head
+                    var head = new THREE.Mesh(cubeGeometry, robotMaterial);
+
+                    head.castShadow = true;
+                    //add to robotheadgroup
+                    robotHeadGroup.add(head);
+
+                    //robot eyes
+                    var cylinderGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.5, 20 );              
+                    var darkMaterial = new THREE.MeshLambertMaterial({color: 0x333333});
+                    var innerEyeMaterial = new THREE.MeshLambertMaterial({color: 0xffff00});
+
+                    //eye loop
+                    for(var i = 0; i < 4; i++){
+
+                        //if i < 2 : draw outer eye, else draw inner eye
+                        if(i<2){
+                            //crate outer eye mesh, scale and position
+                            var eye = new THREE.Mesh(cylinderGeometry, darkMaterial);
+                            eye.scale.set(0.2,0.2,0.2);
+                            eye.position.z = 0.5;
+
+                            if(i === 0){
+                                eye.position.x = 0.25;
+                            }
+                            else{
+                                eye.position.x = -0.25;
+                            }
+
+                        }
+                        else{
+                            //crate inner eye mesh, scale and position
+                            var eye = new THREE.Mesh(cylinderGeometry, innerEyeMaterial);
+                            eye.scale.set(0.075,0.075,0.075);
+                            eye.position.z = 0.535;
+
+                            if(i === 2){
+                                eye.position.x = 0.25;
+                            }
+                            else{
+                                eye.position.x = -0.25;
+                            }
+
+                        }
+
+                        //rotate the cylinder, set height
+                        eye.rotation.x = 0.5 * Math.PI;
+                        eye.position.y = 0.2;
+
+                        //add to robot head group
+                        robotHeadGroup.add(eye);
+
+                    } //end eye loop
+
+                    //robot mouth
+                    //mouth geometry
+                    var mouth = new THREE.Mesh(cylinderGeometry, darkMaterial);
+                    //scale, position and rotate mouth
+                    mouth.scale.set(0.6,0.3,0.3);
+                    mouth.position.y = -0.2;
+                    mouth.position.z = 0.45;
+                    mouth.rotation.x = 0.5 * Math.PI;
+
+                    //add to robot head
+                    robotHeadGroup.add(mouth);
+
+                    //robot antenna
+                    //top sphere
+                    var antennaTopGeometry = new THREE.SphereGeometry(0.1);
+
+                    var antennaTop = new THREE.Mesh(antennaTopGeometry, robotMaterial);
+                    antennaTop.position.y = 1;
+
+                    antennaTop.castShadow = true;
+                    //add to robot head
+                    robotHeadGroup.add(antennaTop);
+
+
+                    //antenna connector
+                    var antennaConnectorGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.5);
+                    var antennaConnector = new THREE.Mesh(antennaConnectorGeometry, connectorMaterial);
+                    antennaConnector.position.y = 0.75;
+
+                    antennaConnector.castShadow = true;
+                    robotHeadGroup.add(antennaConnector);
+
+                    /***** LEGS *****/
+
+                    for(var legCount = 0; legCount < 2; legCount++){
+
+                        var robotLeg = new THREE.Object3D();
+
+                        //new mesh for leg connector
+                        var legConnector = new THREE.Mesh(connectorGeometry, connectorMaterial);
+                        legConnector.scale.set(1.2, 1.2, 1);
+                        legConnector.position.y = 1.5;
+                        legConnector.position.x = 0.75;
+
+                        legConnector.castShadow = true;
+                        //add the leg connector to the leg
+                        robotLeg.add(legConnector);
+
+                        //mesh for legs
+                        var mainLeg = new THREE.Mesh(cubeGeometry, robotMaterial);
+                        //scale the arm
+                        mainLeg.scale.set(0.4,3,0.4);
+                        mainLeg.position.x = 0.75;
+
+                        mainLeg.castShadow = true;
+                        //add main leg
+                        robotLeg.add(mainLeg);
+
+                        //mesh for knee
+                        var knee = new THREE.Mesh(jointGeometry, connectorMaterial);                
+                        knee.position.x = 0.75;
+
+                        knee.castShadow = true;
+                        //add knee
+                        robotLeg.add(knee);
+
+                        //mesh for feet
+                        var foot = new THREE.Mesh(cubeGeometry, connectorMaterial);
+                        foot.scale.set(0.7,0.4,0.8);
+                        foot.position.y = -1.3;
+                        foot.position.x = 0.75;
+                        foot.position.z = 0.14;
+
+                        //set the z position of the foot (else the foot will be the wrong way around)
+                        if(legCount > 0){
+                            foot.position.z = - foot.position.z;
+                        }
+
+                        foot.castShadow = true;
+                        robotLeg.add(foot);
+
+                        //add the legs to the legs group  
+                        if(legCount === 0){
+                            robotLegsGroup.add(robotLeg);
+                        }
+                        else {
+                            //rotate the leg by 180 degrees
+                            robotLeg.rotation.y = 1 * Math.PI;
+                            robotLegsGroup.add(robotLeg);
+                        }
+
+
+                    } //end legs loop
+                }
+                
+                //makeSecondRobot function - generates secondary robot
+                function makeSecondRobot() {
+                    
+                    /***** UPPER BODY *****/
+                    //robot body
+                    var cubeGeometry = new THREE.CubeGeometry(1,1,1);
+                    var robotMaterial = new THREE.MeshLambertMaterial({color: 0x00aaff});
+
+
+                    var connectorMaterial = new THREE.MeshLambertMaterial({color: 0x555555});
+
+                    //chest mesh
+                    var chest = new THREE.Mesh(cubeGeometry, robotMaterial);
+                    chest.scale.set(2.5,3,1.5);
+                    chest.castShadow = true;
+
+                    //add to upper body group
+                    robotUpperBodyGroup2.add(chest);
+
+                    /********************** ************************/
+
+                    /**** ARMS ****/
+                    //arms
+                    //loop to generate and add 2 arms to the scene
+                    for(var armCounter = 0; armCounter < 2; armCounter++){
+                        var robotArm = new THREE.Object3D();
+
+                        //arm connector
+                        var connectorGeometry = new THREE.CylinderGeometry(0.35,0.35,0.3,20);
+
+                            //new mesh for arm connector
+                            var armConnector = new THREE.Mesh(connectorGeometry, connectorMaterial);
+
+                            //position
+                            armConnector.rotation.z = 0.5 * Math.PI;
+                            armConnector.position.y = 0.75; 
+                            armConnector.position.x = 1.3;
+
+                            //add the arm connector
+                            robotArm.add(armConnector);
+
+
+
+                        //shoulder joint  
+                        //new geometry for shoulder joint, generate mesh
+                        var jointGeometry = new THREE.SphereGeometry(0.4);
+                        var shoulder = new THREE.Mesh(jointGeometry, connectorMaterial);
+
+                        //position shoulder joint
+                        shoulder.position.x = 1.6;
+                        shoulder.position.y = 0.75;
+
+                        //add to robot arm
+                        robotArm.add(shoulder);
+
+                        //arm 
+                        var arm = new THREE.Mesh(cubeGeometry, robotMaterial);
+                        //scale the arm
+                        arm.scale.set(0.3,1.5,0.3);
+                        arm.position.set(1.6, 0, 0);
+
+                        arm.castShadow = true;
+
+                        robotArm.add(arm);
+
+
+                        //hand joint
+                        //add new sphere geometry and generate the mesh
+                        var handJointGeometry = new THREE.SphereGeometry(0.3);
+                        var handJoint = new THREE.Mesh(handJointGeometry, connectorMaterial);
+                        //set the position
+                        handJoint.position.x = 1.6;
+                        handJoint.position.y = -0.75;
+
+                        handJoint.castShadow = true;
+                        //add the handjoint
+                        robotArm.add(handJoint);
+
+                        //fingers
+                        for(var i = 0; i<2; i++){
+                            //finger mesh
+                            var finger = new THREE.Mesh(cubeGeometry, robotMaterial);
+                            //finger y position
+                            finger.position.y = -1.1;
+                            //scale finger
+                            finger.scale.set(0.1, 0.3, 0.1);
+
+                            //check which finger no. and set x position 
+                            if(i === 0 ){
+                                finger.position.x = 1.5;
+                            }
+                            else{
+                                finger.position.x = 1.7;
+
+                            }
+
+                            finger.castShadow = true;
+                            //add finger
+                            robotArm.add(finger);    
+
+                        }
+
+                        if(armCounter === 0){
+                            //add to arms group
+                            robotArmsGroup2.add(robotArm);
+                        }
+                        else{
+                            //rotate the second arm 180 degrees
+                            robotArm.rotation.y = 1 * Math.PI;
+                            //add to arms group
+                            robotArmsGroup2.add(robotArm);
+                        }
+
+
+
+                    } //end add arms loop
+
+
+                    /***** HEAD *****/
+                    //robot head
+                    var head = new THREE.Mesh(cubeGeometry, robotMaterial);
+
+                    head.castShadow = true;
+                    //add to robotheadgroup
+                    robotHeadGroup2.add(head);
+
+                    //robot eyes
+                    var cylinderGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.5, 20 );              
+                    var darkMaterial = new THREE.MeshLambertMaterial({color: 0x333333});
+                    var innerEyeMaterial = new THREE.MeshLambertMaterial({color: 0xffff00});
+
+                    //eye loop
+                    for(var i = 0; i < 4; i++){
+
+                        //if i < 2 : draw outer eye, else draw inner eye
+                        if(i<2){
+                            //crate outer eye mesh, scale and position
+                            var eye = new THREE.Mesh(cylinderGeometry, darkMaterial);
+                            eye.scale.set(0.2,0.2,0.2);
+                            eye.position.z = 0.5;
+
+                            if(i === 0){
+                                eye.position.x = 0.25;
+                            }
+                            else{
+                                eye.position.x = -0.25;
+                            }
+
+                        }
+                        else{
+                            //crate inner eye mesh, scale and position
+                            var eye = new THREE.Mesh(cylinderGeometry, innerEyeMaterial);
+                            eye.scale.set(0.075,0.075,0.075);
+                            eye.position.z = 0.535;
+
+                            if(i === 2){
+                                eye.position.x = 0.25;
+                            }
+                            else{
+                                eye.position.x = -0.25;
+                            }
+
+                        }
+
+                        //rotate the cylinder, set height
+                        eye.rotation.x = 0.5 * Math.PI;
+                        eye.position.y = 0.2;
+
+                        //add to robot head group
+                        robotHeadGroup2.add(eye);
+
+                    } //end eye loop
+
+                    //robot mouth
+                    //mouth geometry
+                    var mouth = new THREE.Mesh(cylinderGeometry, darkMaterial);
+                    //scale, position and rotate mouth
+                    mouth.scale.set(0.6,0.3,0.3);
+                    mouth.position.y = -0.2;
+                    mouth.position.z = 0.45;
+                    mouth.rotation.x = 0.5 * Math.PI;
+
+                    //add to robot head
+                    robotHeadGroup2.add(mouth);
+
+                    //robot antenna
+                    //top sphere
+                    var antennaTopGeometry = new THREE.SphereGeometry(0.1);
+
+                    var antennaTop = new THREE.Mesh(antennaTopGeometry, robotMaterial);
+                    antennaTop.position.y = 1;
+
+                    antennaTop.castShadow = true;
+                    //add to robot head
+                    robotHeadGroup2.add(antennaTop);
+
+
+                    //antenna connector
+                    var antennaConnectorGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.5);
+                    var antennaConnector = new THREE.Mesh(antennaConnectorGeometry, connectorMaterial);
+                    antennaConnector.position.y = 0.75;
+
+                    antennaConnector.castShadow = true;
+                    robotHeadGroup2.add(antennaConnector);
+
+                    /***** LEGS *****/
+
+                    for(var legCount = 0; legCount < 2; legCount++){
+
+                        var robotLeg = new THREE.Object3D();
+
+                        //new mesh for leg connector
+                        var legConnector = new THREE.Mesh(connectorGeometry, connectorMaterial);
+                        legConnector.scale.set(1.2, 1.2, 1);
+                        legConnector.position.y = 1.5;
+                        legConnector.position.x = 0.75;
+
+                        legConnector.castShadow = true;
+                        //add the leg connector to the leg
+                        robotLeg.add(legConnector);
+
+                        //mesh for legs
+                        var mainLeg = new THREE.Mesh(cubeGeometry, robotMaterial);
+                        //scale the arm
+                        mainLeg.scale.set(0.4,3,0.4);
+                        mainLeg.position.x = 0.75;
+
+                        mainLeg.castShadow = true;
+                        //add main leg
+                        robotLeg.add(mainLeg);
+
+                        //mesh for knee
+                        var knee = new THREE.Mesh(jointGeometry, connectorMaterial);                
+                        knee.position.x = 0.75;
+
+                        knee.castShadow = true;
+                        //add knee
+                        robotLeg.add(knee);
+
+                        //mesh for feet
+                        var foot = new THREE.Mesh(cubeGeometry, connectorMaterial);
+                        foot.scale.set(0.7,0.4,0.8);
+                        foot.position.y = -1.3;
+                        foot.position.x = 0.75;
+                        foot.position.z = 0.14;
+
+                        //set the z position of the foot (else the foot will be the wrong way around)
+                        if(legCount > 0){
+                            foot.position.z = - foot.position.z;
+                        }
+
+                        foot.castShadow = true;
+                        robotLeg.add(foot);
+
+                        //add the legs to the legs group  
+                        if(legCount === 0){
+                            robotLegsGroup2.add(robotLeg);
+                        }
+                        else {
+                            //rotate the leg by 180 degrees
+                            robotLeg.rotation.y = 1 * Math.PI;
+                            robotLegsGroup2.add(robotLeg);
+                        }
+
+
+                    } //end legs loop
+                }
+                
+                //createMesh function - generates and returns a mesh based on a geometry and an image
+                function createMesh(geom, imageFile) {
+                    //create new phong material
+                    var material = new THREE.MeshPhongMaterial();
+
+                    //create a new texture based of image passed to function
+                    var texture = new THREE.TextureLoader().load("../assets/textures/general/" + imageFile);
+                    //map the texture to the material
+                    material.map = texture;
+                    //create the mesh
+                    var mesh = new THREE.Mesh(geom, material);
+                    //return the mesh
+                    return mesh;
+                }
+                                
+                //makeRoadAndHouses function - generates, positions and adds the road, path, houses to the scene
+                function makeRoadAndHouses() {
+                    var roadGeometry = new THREE.CubeGeometry(25,0.01,120);
+                    var roadMaterial = new THREE.MeshLambertMaterial({color: 0x222222});
+                    var road = new THREE.Mesh(roadGeometry, roadMaterial);
+                    road.receiveShadow = true;
+                    
+                    //add the road to the road and path group
+                    roadAndPathGroup.add(road);
+                    
+                    //add lines to the road
+                    var linePosition = -50;
+                    for(var i = 0; i < 5; i++){
+                        
+                        //generate new geometry and material
+                        var lineGeometry = new THREE.CubeGeometry(1, 0.02, 15);
+                        var lineMaterial = new THREE.MeshLambertMaterial({color: 0xffffff});
+                    
+                        //generate new mesh
+                        var line = new THREE.Mesh(lineGeometry, lineMaterial);
+                        //set line position, increment linePosition variable
+                        line.position.z = linePosition;
+                        linePosition += 25;
+                        line.position.y = 0.01;
+                    
+                    //add line
+                    roadAndPathGroup.add(line);
+                    }
+                    
+                    
+                    //make paths
+                    for(var i = 0; i < 2; i++){
+                        var pathMaterial = new THREE.MeshLambertMaterial({color: 0x666666});
+                        //var path = new THREE.Mesh(roadGeometry, pathMaterial);
+                        //var path = createMesh(roadGeometry, "stone.jpg");
+                        var path = new THREE.Mesh(roadGeometry, pathMaterial);
+                        
+                        path.scale.x = 0.25;
+                        path.scale.y = 60;
+                        path.position.y = 0.3;
+                        
+                        if(i === 0){
+                            path.position.x = -15.5;
+                        }
+                        else {
+                            path.position.x = 15.5;
+                        
+                            
+                        }
+                        path.receiveShadow = true;
+                        //add to the road and path group
+                        roadAndPathGroup.add(path);
+                    }
+                    
+                    //generate houses
+                    var housePoint = -75;
+                    for(var i = 0 ; i < 10; i++){
+                        var house = createMesh(new THREE.CubeGeometry(10, 10, 15), "brick-wall.jpg");
+                        house.castShadow = true;
+                        //first 5 houses on one side, second rotated on the other side
+                        if(i < 5){
+                           housePoint += 25;
+                           house.position.x = -23.5;
+                        }
+                        else if (i === 5)
+                        {
+                            housePoint = -52.5;
+                            house.position.x = 23.5;
+                            house.rotation.y = 1 * Math.PI;
+                        }
+                        else
+                        {
+                            housePoint += 25;
+                            house.position.x = 23.5;
+                            house.rotation.y = 1 * Math.PI;
+                        }
+                        
+                        //set house y and z position
+                        house.position.y = 5;
+                        house.position.z = housePoint;
+                        
+                        //add house to house group
+                        houseGroup.add(house);
+
+                        //window geometry
+                        var windowGeometry = new THREE.CubeGeometry(2,5,3.5);
+                        var windowMaterial = new THREE.MeshLambertMaterial({color: 0x333333});
+
+                        //window 1
+                        var window = new THREE.Mesh(windowGeometry, windowMaterial);                    
+                        window.position.y = 0;
+                        window.position.x = 4.01;
+                        window.position.z = 4.7;
+
+                        //window 2
+                        var window2 = new THREE.Mesh(windowGeometry, windowMaterial);                    
+                        window2.position.y = 0;
+                        window2.position.x = 4.01;
+                        window2.position.z = -4.7;
+
+                        //add windows to house group
+                        house.add(window, window2);
+
+                        //door
+                        var doorGeometry = new THREE.CubeGeometry(2, 8, 3.5);
+                        var doorMaterial = new THREE.MeshLambertMaterial({color: 0x802020});
+                        var door = new THREE.Mesh(doorGeometry, doorMaterial);
+
+                        door.position.x = 4.01;
+                        door.position.y = -1;
+                        house.add(door);
+
+                        //roof
+                        var roofGeometry = new THREE.CubeGeometry(12,0.25,17);
+                        //make roof mesh, position and add to house
+                        var roof = new THREE.Mesh(roofGeometry, doorMaterial);
+                        roof.position.y = 5;
+                        house.add(roof);
+                    } //end generate houses loop
+                    
+                }
+                             
+                //makeUfo function - generates, positions, adds ufos to the scene
+                function makeUfo(){
+                
+                    /* ufo 1 */
+                    //body 
+                    var ufoBodyGeometry = new THREE.CylinderGeometry(3, 1, 2.3, 4 );
+                    var ufoRoundedBodyGeometry = new THREE.CylinderGeometry( 2.5, 1, 2, 20);
+
+
+                    // genrate ufo body
+                    var cubeMaterial = new THREE.MeshLambertMaterial({color: 0x666666});
+
+                    var body = new THREE.Mesh(ufoRoundedBodyGeometry, cubeMaterial);
+                    body.castShadow = true;
+
+                    //rotate the body
+                    body.rotation.y = -0.25 * Math.PI;
+
+                    //add the body to the ufo body group
+                    ufoBodyGroup.add(body);
+
+                    //inner body
+                    var cubeMaterialInner = new THREE.MeshLambertMaterial({color: 0x999999});
+
+
+                    //stripes on upper body
+                    var innerStripe = new THREE.Mesh(ufoBodyGeometry, cubeMaterialInner);
+                    innerStripe.scale.x = 0.15;
+                    ufoBodyGroup.add(innerStripe);
+
+                    var innerStripe1 = new THREE.Mesh(ufoBodyGeometry, cubeMaterialInner);
+                    innerStripe1.scale.x = 0.15;
+                    innerStripe1.rotation.y = -0.5 * Math.PI;
+                    ufoBodyGroup.add(innerStripe1);
+
+                    var innerStripe2 = new THREE.Mesh(ufoBodyGeometry, cubeMaterialInner);
+                    innerStripe2.scale.x = 0.15;
+
+                    innerStripe2.rotation.y = -0.25 * Math.PI;
+                    ufoBodyGroup.add(innerStripe2);
+
+                    var innerStripe3 = new THREE.Mesh(ufoBodyGeometry, cubeMaterialInner);
+                    innerStripe3.scale.x = 0.15;
+                    innerStripe3.rotation.y = -0.75 * Math.PI;
+                    ufoBodyGroup.add(innerStripe3);
+
+
+                    //top sphere
+                    var ufoTopGeometry = new THREE.SphereGeometry(1.25);
+                    var ufoTopMaterial = new THREE.MeshLambertMaterial({color: 0x666666});               
+                    var top = new THREE.Mesh(ufoTopGeometry, ufoTopMaterial);
+                    ufoTopGroup.add(top);
+
+                    //antenna 
+                    var ufoAntennaTop = new THREE.Mesh(ufoTopGeometry, ufoTopMaterial);
+                    ufoAntennaTop.scale.x = 0.2;
+                    ufoAntennaTop.scale.y = 0.2;
+                    ufoAntennaTop.scale.z = 0.2;
+                    ufoAntennaTop.position.y = 2.5;
+                    ufoTopGroup.add(ufoAntennaTop);
+
+                    //antenna link
+                    var ufoLinkGeometry = new THREE.CubeGeometry(0.1,1,0.1);
+                    var ufoAntennaLink = new THREE.Mesh(ufoLinkGeometry, ufoTopMaterial);
+                    ufoAntennaLink.position.y = 1.75;
+                    ufoTopGroup.add(ufoAntennaLink);
+
+                    //tractor beam
+                    var ufoBeamGeometry = new THREE.CylinderGeometry(0.25, 5, ufoHeight + 2, 30);
+                    var ufoBeamMaterial = new THREE.MeshLambertMaterial({color: 0xff00ff});
+                    ufoBeamMaterial.transparent = true;
+                    ufoBeamMaterial.opacity = 0.6;
+
+                    var ufoBeamMesh = new THREE.Mesh(ufoBeamGeometry, ufoBeamMaterial);
+
+                    ufoBeamMesh.position.y = -8.5;
+
+                    //add the beam to the body
+                    ufoBodyGroup.add(ufoBeamMesh);  
+                    
+                    /* ufo 2 */
+                    //body 
+                    
+                    // genrate ufo body
+
+                    var body2 = new THREE.Mesh(ufoRoundedBodyGeometry, cubeMaterial);
+                    body2.castShadow = true;
+
+                    body2.rotation.y = -0.25 * Math.PI;
+
+                    ufoBodyGroup2.add(body2);
+
+                    //inner body
+ 
+                    //stripes on upper body
+                    var innerStripeUfo2 = new THREE.Mesh(ufoBodyGeometry, cubeMaterialInner);
+                    innerStripeUfo2.scale.x = 0.15;
+                    ufoBodyGroup2.add(innerStripeUfo2);
+
+                    var innerStripeUfo21 = new THREE.Mesh(ufoBodyGeometry, cubeMaterialInner);
+                    innerStripeUfo21.scale.x = 0.15;
+                    innerStripeUfo21.rotation.y = -0.5 * Math.PI;
+                    ufoBodyGroup2.add(innerStripeUfo21);
+
+                    var innerStripeUfo22 = new THREE.Mesh(ufoBodyGeometry, cubeMaterialInner);
+                    innerStripeUfo22.scale.x = 0.15;
+
+                    innerStripeUfo22.rotation.y = -0.25 * Math.PI;
+                    ufoBodyGroup2.add(innerStripeUfo22);
+
+                    var innerStripeUfo23 = new THREE.Mesh(ufoBodyGeometry, cubeMaterialInner);
+                    innerStripeUfo23.scale.x = 0.15;
+                    innerStripeUfo23.rotation.y = -0.75 * Math.PI;
+                    ufoBodyGroup2.add(innerStripeUfo23);
+
+
+                    //top sphere
+                                  
+                    var topUfo2 = new THREE.Mesh(ufoTopGeometry, ufoTopMaterial);
+                    ufoTopGroup2.add(topUfo2);
+
+                    //antenna 
+                    var ufoAntennaTopUfo2 = new THREE.Mesh(ufoTopGeometry, ufoTopMaterial);
+                    ufoAntennaTopUfo2.scale.x = 0.2;
+                    ufoAntennaTopUfo2.scale.y = 0.2;
+                    ufoAntennaTopUfo2.scale.z = 0.2;
+                    ufoAntennaTopUfo2.position.y = 2.5;
+                    ufoTopGroup2.add(ufoAntennaTopUfo2);
+
+                    //antenna link
+                    var ufoAntennaLinkUfo2 = new THREE.Mesh(ufoLinkGeometry, ufoTopMaterial);
+                    ufoAntennaLinkUfo2.position.y = 1.75;
+                    ufoTopGroup2.add(ufoAntennaLinkUfo2);
+
+                    //tractor beam
+                    var ufoBeamMaterialUfo2 = new THREE.MeshLambertMaterial({color: 0x0000ff});
+                    ufoBeamMaterialUfo2.transparent = true;
+                    ufoBeamMaterialUfo2.opacity = 0.6;
+
+                    var ufoBeamGeometry2 = new THREE.CylinderGeometry(0.25, 5, ufoHeight2 + 2, 30);
+                    var ufoBeamMeshUfo2 = new THREE.Mesh(ufoBeamGeometry2, ufoBeamMaterialUfo2);
+
+                    ufoBeamMeshUfo2.position.y = -10.5;
+
+                    //add the beam to the body
+                    ufoBodyGroup2.add(ufoBeamMeshUfo2); 
+                    
+                    /* ufo 3 */
+                    var body3 = new THREE.Mesh(ufoRoundedBodyGeometry, cubeMaterial);
+                    body3.castShadow = true;
+
+                    body3.rotation.y = -0.25 * Math.PI;
+
+                    ufoBodyGroup3.add(body3);
+
+                    //inner body
+ 
+                    //stripes on upper body
+                    var innerStripeUfo3 = new THREE.Mesh(ufoBodyGeometry, cubeMaterialInner);
+                    innerStripeUfo3.scale.x = 0.15;
+                    ufoBodyGroup3.add(innerStripeUfo3);
+
+                    var innerStripeUfo31 = new THREE.Mesh(ufoBodyGeometry, cubeMaterialInner);
+                    innerStripeUfo31.scale.x = 0.15;
+                    innerStripeUfo31.rotation.y = -0.5 * Math.PI;
+                    ufoBodyGroup3.add(innerStripeUfo31);
+
+                    var innerStripeUfo32 = new THREE.Mesh(ufoBodyGeometry, cubeMaterialInner);
+                    innerStripeUfo32.scale.x = 0.15;
+
+                    innerStripeUfo32.rotation.y = -0.25 * Math.PI;
+                    ufoBodyGroup3.add(innerStripeUfo32);
+
+                    var innerStripeUfo33 = new THREE.Mesh(ufoBodyGeometry, cubeMaterialInner);
+                    innerStripeUfo33.scale.x = 0.15;
+                    innerStripeUfo33.rotation.y = -0.75 * Math.PI;
+                    ufoBodyGroup3.add(innerStripeUfo33);
+
+
+                    //top sphere
+                                  
+                    var topUfo3 = new THREE.Mesh(ufoTopGeometry, ufoTopMaterial);
+                    ufoTopGroup3.add(topUfo3);
+
+                    //antenna 
+                    var ufoAntennaTopUfo3 = new THREE.Mesh(ufoTopGeometry, ufoTopMaterial);
+                    ufoAntennaTopUfo3.scale.x = 0.2;
+                    ufoAntennaTopUfo3.scale.y = 0.2;
+                    ufoAntennaTopUfo3.scale.z = 0.2;
+                    ufoAntennaTopUfo3.position.y = 2.5;
+                    ufoTopGroup3.add(ufoAntennaTopUfo3);
+
+                    //antenna link
+                    var ufoAntennaLinkUfo3 = new THREE.Mesh(ufoLinkGeometry, ufoTopMaterial);
+                    ufoAntennaLinkUfo3.position.y = 1.75;
+                    ufoTopGroup3.add(ufoAntennaLinkUfo3);
+
+                    //tractor beam
+                    var ufoBeamMaterialUfo3 = new THREE.MeshLambertMaterial({color: 0xffff00});
+                    ufoBeamMaterialUfo3.transparent = true;
+                    ufoBeamMaterialUfo3.opacity = 0.6;
+
+                    var ufoBeamGeometry3 = new THREE.CylinderGeometry(0.25, 5, ufoHeight3 + 2, 30);                    
+                    var ufoBeamMeshUfo3 = new THREE.Mesh(ufoBeamGeometry3, ufoBeamMaterialUfo3);
+
+                    ufoBeamMeshUfo3.position.y = -12;
+
+                    //add the beam to the body
+                    ufoBodyGroup3.add(ufoBeamMeshUfo3); 
+                
+              
+                }
+                
+                //rotateUfos function - rotates the ufos, manages ufo orbit groups
+                function rotateUfos() {
+                    // rotate the orbit group
+                        speed += ufoRotationSpeed;
+                        ufoOrbitGroup.rotation.y = -speed / 10;
+                        ufoInnerOrbitGroup.rotation.y = -speed / 2 ;
+                        
+                        ufoOrbitGroup2.rotation.y = -speed / 10;
+                        ufoInnerOrbitGroup2.rotation.y = -speed / 2 ;
+                        
+                        ufoOrbitGroup3.rotation.y = speed / 10;
+                        ufoInnerOrbitGroup3.rotation.y = speed / 2 ;
+                        
+                        
+                    //spin the ufos
+                    ufoGroup.rotation.y = -speed;
+                    ufoGroup2.rotation.y = -speed;
+                    ufoGroup3.rotation.y = speed;
+                }
+               
+                //checkRobotBoundary function - checks if the robot has hit a boundary, increases pos-y and 
+                //returns to starting point
+                function checkRobotBoundary() {
+                    //if the robot goes out of bound, set hitBoundary bool to true
+                    if(robotGroup.position.x >= 18 || robotGroup.position.x <= -18){                       
+                        hitBoundary = true;
+                    }
+                    else{
+                        hitBoundary = false;
+     
+                    }
+                        //if the robot has hit the boundary, pick him up and return to start
+                        if(hitBoundary){
+                            if(robotGroup.position.y < ufoHeight - 1){
+                                robotGroup.position.y += 0.1;
+                            }
+                            else{
+                                robotGroup.position.set(0,0,-50);
+                            }    
+                        }
+                }
+                
+                //checkIfRobotsHaveMet function - determines if the robots have interacted, if so removes ufo
+                //from view and then from the scene
+                function checkIfRobotsHaveMet() {
+                    //check robots position compared to other robot
+                    if((robotGroup.position.x < robotGroup2.position.x + 3 &&
+                        robotGroup.position.x > robotGroup2.position.x - 3) 
+                        &&
+                       (robotGroup.position.z < robotGroup2.position.z + 3 &&
+                        robotGroup.position.z > robotGroup2.position.z - 3))
+                    {
+                       //set robotsMet bool to true
+                       robotsMet = true;
+                       
+                    }
+                       
+                       if(robotsMet){
+                           //move ufos out of view
+                            ufoOrbitGroup.position.x += 0.5;
+                            ufoOrbitGroup2.position.x += 0.5;
+                            ufoOrbitGroup3.position.z += 0.25;
+                            ufoOrbitGroup3.position.x += 0.5;
+                            
+                            //rotate the robots
+                            robotGroup.rotation.y += 0.25;
+                            robotGroup2.rotation.y += 0.25;
+                            
+                            
+                            //once ufos are out of view, remove from scene
+                            if(ufoOrbitGroup.position.x > 160){
+                                ufoGroup.visible = false;
+                                ufoGroup2.visible = false;
+                                ufoGroup3.visible = false;
+                                
+                                //set the robotsMet bool back to false
+                                robotsMet = false;
+                                
+                                //reset the direction the robots are facing
+                                robotGroup.rotation.y = 0;
+                                robotGroup2.rotation.y = 1 * Math.PI;
+                            }
+                            
+                           
+                       }
+                       
+                       else{
+                           //else set robotsMet bool to false
+                           robotsMet = false;
+                       }
+                }
+                
+                //checkIfOnPath function - checks if the robot is on the path, if so returns true, if not
+                //returns false
+                function checkIfOnPath() {
+                    if((robotGroup.position.x < 18 && robotGroup.position.x > 10)
+                        ||
+                        (robotGroup.position.x > -18 && robotGroup.position.x < -10)){
+                    
+                            return true;
+                        }
+                
+                        return false;
+                }
+                
+                function firstPersonView() {
+                    camera.position.x = robotGroup.position.x;
+                    camera.position.z = robotGroup.position.z + 0.5;
+                    camera.position.y = robotHeadGroup.position.y; 
+                    
+                }
+                
+                /*** ***/
+                
+                //key listener functions
+                var keypress = new window.keypress.Listener();
+
+                //w key keypress function - if in bounds, move forward
+                keypress.simple_combo("w", function () {
+                    //if the robot has not hit the boundary, move forward
+                    if(!hitBoundary){
+                      if(robotGroup.position.z < 60){
+                           robotGroup.position.z += robotSpeed;
+                        }
+                    }
+                    
+                    //rotate so robot is facing the correct way
+                    robotGroup.rotation.y = 0;
+                    
+                });
+
+                //s key keypress function - if in bounds, move backwards
+                keypress.simple_combo("s", function () {
+                    //if the robot has not hit the boundary, move backwards
+                    if(!hitBoundary){
+                        if(robotGroup.position.z > -60){
+                           robotGroup.position.z -= robotSpeed;
+                        }
+                        
+                        //rotate so robot is facing the correct way
+                        robotGroup.rotation.y = 1 * Math.PI;
+                    }
+                });
+
+                //a key keypress function - if in bounds, move left, check if on path and adjust height accordingly
+                keypress.simple_combo("a", function () {
+                    //if the robot has not hit the boundary
+                    if(!hitBoundary){
+                        
+                        //step up onto the path, if on path, else pos.y == road height
+                       if(checkIfOnPath()){
+                           robotGroup.position.y = 0.9;
+                       }
+                       else{
+                           robotGroup.position.y = 0;
+                       }
+                            //check robot position to determine if the robot should move or not
+                            if(robotGroup.position.x < 18)
+                            {
+                               robotGroup.position.x += robotSpeed; 
+                            }
+
+                        
+                        //rotate so robot is facing the correct way
+                        robotGroup.rotation.y = 0.5 * Math.PI;
+                        
+                    }
+                });
+
+                //d key keypress function - if in bounds, move right, check if on path and adjust height accordingly
+                keypress.simple_combo("d", function () {
+                    //if the robot has not hit the boundary
+                    if(!hitBoundary){
+                       //step up onto the path, if on path, else pos.y == road height
+                       if(checkIfOnPath()){
+                           robotGroup.position.y = 0.9;
+                       }
+                       else{
+                           robotGroup.position.y = 0;
+                       }
+                            //check robot position to determine if the robot should move or not
+                            if(robotGroup.position.x > -18)
+                            {   
+                                robotGroup.position.x -= robotSpeed;
+                            }
+                        
+                        //rotate so robot is facing the correct way
+                        robotGroup.rotation.y = -0.5 * Math.PI;
+                    }
+                });
+                
+                
+                //keypress for camera movement
+                keypress.simple_combo("left", function() {
+                    camera.rotation.y -= 0.5;
+                });
+
+                keypress.simple_combo("right", function() {
+                    camera.rotation.y += 0.5;
+                });
+
+                keypress.simple_combo("up", function() {
+                    camera.position.z += 3;                    
+                });
+
+                keypress.simple_combo("down", function() {
+                    camera.position.z -= 3;                    
+                });
+                
+                
+                
+                function initStats() {
+
+                    var stats = new Stats();
+
+                    stats.setMode(0); // 0: fps, 1: ms
+
+                    // Align top-left
+                    stats.domElement.style.position = 'absolute';
+                    stats.domElement.style.left = '0px';
+                    stats.domElement.style.top = '0px';
+
+                    $("#Stats-output").append(stats.domElement);
+
+                    return stats;
+                }
+            });
+
+        </script>
+    </body>
+</html>
